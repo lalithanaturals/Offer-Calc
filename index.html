@@ -63,6 +63,7 @@
   }
 
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  button, input, a, .disc-chip, .pct-pill, .brand, .icon-btn{ touch-action:manipulation; }
   html,body{ height:100%; overscroll-behavior:none; }
   body{
     margin:0;
@@ -1220,18 +1221,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 <script>
 (function(){
   'use strict';
-
-  /* ---------- prevent double-tap-to-zoom on rapid repeated taps (iOS Safari ignores
-     user-scalable=no for accessibility since iOS 10, so this JS-level guard is required
-     in addition to the touch-action:manipulation CSS) ---------- */
-  var lastTouchEnd = 0;
-  document.addEventListener('touchend', function(e){
-    var now = Date.now();
-    if (now - lastTouchEnd <= 350){
-      e.preventDefault();
-    }
-    lastTouchEnd = now;
-  }, { passive: false });
 
   /* ---------- storage helpers (never let a blocked/full localStorage crash the app) ---------- */
   function lsGet(key, fallback){
