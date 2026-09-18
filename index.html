@@ -1608,14 +1608,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function saveStorage(){ lsSet('lalitha_bill_items', billItems); }
 
   function shareApp(){
-    var shareData = {
-      title: 'Offer Calc — Lalitha Naturals',
-      text: 'Offer Calc: a quick discount & billing calculator app. Try it out!',
-      url: APP_URL
-    };
-    if (navigator.share){
-      navigator.share(shareData).catch(function(){ /* user cancelled share sheet, ignore */ });
-    } else if (navigator.clipboard && navigator.clipboard.writeText){
+    // Called synchronously from the button's onclick (a real user gesture), so the OS
+    // share sheet opens immediately with no extra tap or dialog in between.
+    var shareData = { title: 'Offer Calc — Lalitha Naturals', url: APP_URL };
+    var canUseNativeShare = !!navigator.share && (!navigator.canShare || navigator.canShare(shareData));
+    if (canUseNativeShare){
+      try {
+        navigator.share(shareData).catch(function(){ /* user cancelled the share sheet, ignore */ });
+        return;
+      } catch (e) { /* fall through to clipboard fallback below */ }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(APP_URL).then(function(){
         showToast('Link copied! Paste it to share.');
       }).catch(function(){
