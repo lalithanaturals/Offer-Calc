@@ -76,7 +76,13 @@
     touch-action:manipulation;
     display:flex;
     justify-content:center;
+    /* --app-height is set from JS to the real, current window.innerHeight (falls back to
+       100dvh if JS hasn't run yet). iOS Safari/PWA sometimes reports a stale viewport height
+       right after launch or when the browser chrome shows/hides, which is what causes the
+       page to sometimes stretch fully and sometimes leave a gap at the bottom; recomputing
+       this in JS on load/resize/orientation-change fixes it reliably on iPhone. */
     height:100dvh;
+    height:var(--app-height, 100dvh);
     overflow:hidden;
   }
   input, button, select, textarea{ font-family:inherit; }
@@ -229,7 +235,7 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:38vw;
   }
   #live-final{
-    font-size:clamp(30px,9.5vw,42px); font-weight:800; letter-spacing:-0.5px; color:#fff;
+    font-size:clamp(34px,10.8vw,48px); font-weight:800; letter-spacing:-0.5px; color:#fff;
     line-height:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
 
@@ -473,10 +479,10 @@
       display:block; position:fixed; left:0; top:0; width:80mm; margin:0; padding:2mm 3mm;
     }
     #print-area pre{
-      margin:0; font-family:'Courier New',monospace; font-size:9.5pt; line-height:1.35;
-      white-space:pre; color:#000; font-weight:800;
+      margin:0; font-family:'Courier New',monospace; font-size:9pt; line-height:1.4;
+      white-space:pre; color:#000; font-weight:900;
       -webkit-print-color-adjust:exact; print-color-adjust:exact;
-      text-shadow:0.2px 0 0 #000, -0.2px 0 0 #000, 0 0.2px 0 #000, 0 -0.2px 0 #000;
+      -webkit-text-stroke:0.3px #000;
     }
     @page{ size:80mm auto; margin:0; }
   }
@@ -1222,6 +1228,33 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 (function(){
   'use strict';
 
+  /* ---------- keep the app's height pinned to the real, current viewport height ----------
+     iOS Safari (and standalone/home-screen launches) can report a viewport height that is
+     briefly wrong right at launch, or that changes as the browser chrome shows/hides — this
+     is what makes the page sometimes stretch fully and sometimes leave a gap. Recomputing
+     --app-height from window.innerHeight (and visualViewport, when available, since it tracks
+     iOS Safari's real visible area more reliably) fixes it on iPhone by default. */
+  function setAppHeight(){
+    var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    document.documentElement.style.setProperty('--app-height', h + 'px');
+  }
+  setAppHeight();
+  window.addEventListener('resize', setAppHeight);
+  window.addEventListener('orientationchange', function(){
+    setAppHeight();
+    setTimeout(setAppHeight, 120);
+    setTimeout(setAppHeight, 400);
+  });
+  if (window.visualViewport){
+    window.visualViewport.addEventListener('resize', setAppHeight);
+  }
+  // iOS sometimes settles the real chrome/status-bar size a moment after 'load'.
+  window.addEventListener('load', function(){
+    setTimeout(setAppHeight, 50);
+    setTimeout(setAppHeight, 300);
+    setTimeout(setAppHeight, 800);
+  });
+
   /* ---------- storage helpers (never let a blocked/full localStorage crash the app) ---------- */
   function lsGet(key, fallback){
     try{
@@ -1244,7 +1277,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   var savedScrapRates = lsGet('lalitha_scrap_rates', {alu: 150, steel: 50, handleKg: 0.1});
   var ALU_RATE = savedScrapRates.alu, STEEL_RATE = savedScrapRates.steel, HANDLE_KG = savedScrapRates.handleKg;
-  var RECEIPT_WIDTH = 40; // characters — tuned for 80mm thermal paper at 8-9pt Courier
+  var RECEIPT_WIDTH = 36; // characters — tuned to actually fit the printable 80mm width at 9pt bold Courier (40 was overflowing the page edge)
   var APP_URL = 'https://lalithanaturals.github.io/Offer-Calc/';
 
   /* ---------- element refs ---------- */
@@ -1864,27 +1897,27 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     ensureJsPDF().then(function(){
       var jsPDF = window.jspdf.jsPDF;
       var pageWidth = 80;
-      var lineHeightMm = 4.2;
+      var lineHeightMm = 4.3;
       // jsPDF silently swaps width/height when the requested height is shorter than the width
       // for a 'portrait' page (a short receipt with only 1-2 lines would otherwise print at the
       // wrong width). Enforcing height >= width guarantees the page always comes out as intended.
       var docHeight = Math.max(pageWidth + 10, 22 + receipt.lines.length * lineHeightMm);
       var doc = new jsPDF({ orientation:'portrait', unit:'mm', format:[pageWidth, docHeight] });
 
-      // Bold font + explicit black fill (not default gray-black) so text stays dark and
-      // legible on thermal printers that print lightly / fade with cheap paper or a worn head.
+      // Bold font, explicit black fill (not default gray-black), and a thin stroke around each
+      // glyph so text stays dark, crisp and legible on thermal printers that print lightly or
+      // fade with cheap paper or a worn head — without the blurry look a doubled-draw gives.
       doc.setFont('Courier', 'bold');
       doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.1);
 
       var y = 10;
-      var margin = 4;
+      var margin = 3.5;
 
       receipt.lines.forEach(function(line){
-        // Print each line twice at a hairline offset to simulate extra-bold/darker strokes —
-        // cheap thermal heads often render normal-weight PDF text faintly.
-        doc.text(line, margin, y);
-        doc.text(line, margin + 0.12, y);
+        doc.text(line, margin, y, { renderingMode: 'fillThenStroke' });
         y += lineHeightMm;
       });
 
