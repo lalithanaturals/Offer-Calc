@@ -25,13 +25,13 @@
 <meta property="og:title" content="Offer Calc — Lalitha Naturals">
 <meta property="og:description" content="Offer Calc — discount billing calculator with scrap-exchange deduction and thermal receipt printing for Lalitha Naturals.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://lalithanaturals.github.io/Offer-Calc/">
-<meta property="og:image" content="https://lalithanaturals.github.io/Offer-Calc/icon-512.png">
+<meta property="og:url" content="https://lalithanaturals.github.io/scrap-calc/">
+<meta property="og:image" content="https://lalithanaturals.github.io/scrap-calc/icon-512.png">
 <meta property="og:image:width" content="512">
 <meta property="og:image:height" content="512">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Offer Calc — Lalitha Naturals">
-<meta name="twitter:image" content="https://lalithanaturals.github.io/Offer-Calc/icon-512.png">
+<meta name="twitter:image" content="https://lalithanaturals.github.io/scrap-calc/icon-512.png">
 
 <title>Offer Calc</title>
 
@@ -488,7 +488,7 @@
 
   /* Toast */
   .toast{
-    position:fixed; bottom:calc(24px + var(--safe-b)); left:50%; transform:translateX(-50%) translateY(20px);
+    position:fixed; top:calc(16px + var(--safe-t)); left:50%; transform:translateX(-50%) translateY(-20px);
     background:var(--panel-2); color:#fff; font-size:13px; font-weight:700; padding:12px 18px;
     border-radius:16px; border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,0.4);
     display:flex; align-items:center; gap:9px; z-index:60; opacity:0; pointer-events:none;
@@ -1299,12 +1299,24 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
      --app-height from window.innerHeight (and visualViewport, when available, since it tracks
      iOS Safari's real visible area more reliably) fixes it on iPhone by default. */
   function setAppHeight(){
-    var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    // Take the largest of the candidates we can read right now — on Android, innerHeight
+    // briefly under-reports right after a home-screen launch (before the nav/status bars
+    // finish settling), which is what left a gap at the bottom. Never shrink to a smaller
+    // reading than we've already confirmed, only grow to a larger one.
+    var candidates = [window.innerHeight];
+    if (window.visualViewport && window.visualViewport.height) candidates.push(window.visualViewport.height);
+    var h = Math.max.apply(null, candidates.filter(function(v){ return v > 0; }));
+    var prev = parseFloat(document.documentElement.style.getPropertyValue('--app-height')) || 0;
+    // Only accept a smaller value if it's a real, deliberate viewport shrink (e.g. keyboard
+    // opening, or rotating), signalled by a fairly large drop — not a few px of chrome jitter.
+    if (h < prev && (prev - h) < 80) h = prev;
     document.documentElement.style.setProperty('--app-height', h + 'px');
   }
   setAppHeight();
   window.addEventListener('resize', setAppHeight);
   window.addEventListener('orientationchange', function(){
+    // A rotation invalidates any "don't shrink" guard from the old orientation.
+    document.documentElement.style.removeProperty('--app-height');
     setAppHeight();
     setTimeout(setAppHeight, 120);
     setTimeout(setAppHeight, 400);
@@ -1312,11 +1324,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   if (window.visualViewport){
     window.visualViewport.addEventListener('resize', setAppHeight);
   }
-  // iOS sometimes settles the real chrome/status-bar size a moment after 'load'.
+  window.addEventListener('pageshow', setAppHeight);
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden) setAppHeight();
+  });
+  // Android/iOS chrome (nav bar, status bar, URL bar) can keep settling for a second or two
+  // after launch, especially from a home-screen icon — keep re-measuring for a short window
+  // so the app always ends up pinned to the final, fully-settled viewport height.
   window.addEventListener('load', function(){
     setTimeout(setAppHeight, 50);
-    setTimeout(setAppHeight, 300);
-    setTimeout(setAppHeight, 800);
+    setTimeout(setAppHeight, 200);
+    setTimeout(setAppHeight, 400);
+    setTimeout(setAppHeight, 700);
+    setTimeout(setAppHeight, 1100);
+    setTimeout(setAppHeight, 1600);
+    setTimeout(setAppHeight, 2200);
   });
 
   /* ---------- storage helpers (never let a blocked/full localStorage crash the app) ---------- */
@@ -1341,7 +1363,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   var savedScrapRates = lsGet('lalitha_scrap_rates', {alu: 150, steel: 50, handleKg: 0.1});
   var ALU_RATE = savedScrapRates.alu, STEEL_RATE = savedScrapRates.steel, HANDLE_KG = savedScrapRates.handleKg;
-  var APP_URL = 'https://lalithanaturals.github.io/Offer-Calc/';
+  var APP_URL = 'https://lalithanaturals.github.io/scrap-calc/';
 
   /* ---------- element refs ---------- */
   var mrpDisplay = document.getElementById('mrp-display');
