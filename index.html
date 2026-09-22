@@ -389,6 +389,14 @@
   .app.mode-calc .dv-mrp{ width:100%; text-align:right; }
   .app.mode-calc .dv-mrp .l{ display:none; }
   .app.mode-calc #mrp-display{ font-size:clamp(48px,15vw,72px); color:#fff; font-weight:600; max-width:100%; }
+  /* Expression trail — Offer Calc never shows this (only #calc-expr-trail exists, and it's
+     empty/hidden outside calc mode), only Normal Calculator does. */
+  #calc-expr-trail{ display:none; }
+  .app.mode-calc #calc-expr-trail{
+    display:block; min-height:1.3em;
+    font-size:clamp(18px,5.5vw,26px); font-weight:600; color:var(--text-dim);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+  }
 
   /* Add Item — only for Normal Calculator (Offer Calc's ADD key is built into its own
      keypad). Now a grid cell that sits beside "=" in the keypad's last row, rather than a
@@ -764,6 +772,9 @@
     <div class="display-values">
       <div class="dv-mrp">
         <div class="l">MRP</div>
+        <!-- Live expression trail — Normal Calculator only. Shows the running expression
+             (e.g. "500+200") above the big result, the way the iPhone Calculator does. -->
+        <div id="calc-expr-trail" class="tabular"></div>
         <div id="mrp-display" class="tabular">0</div>
       </div>
       <div class="dv-final">
@@ -823,7 +834,12 @@
        "stretching" the keypad taller to make room for the bigger "+", while C/%/⌫/÷/×/−
        all stay their normal single-row size. -->
   <div class="keypad" id="keypad-calc">
-    <button class="key op" style="grid-column:1;grid-row:1;" onclick="clearCalculator()">C</button>
+    <!-- Row 1: back to C, %, Backspace, ÷ — the layout you already had. The clear key's
+         label still flips between "AC" (clears everything) and "C" (clears just the
+         current entry, keeping the expression in progress), same as the iPhone Calculator. -->
+    <button class="key op" style="grid-column:1;grid-row:1;" onclick="clearCalculator()" title="Clear">
+      <span id="calc-ac-label">AC</span>
+    </button>
     <button class="key op" style="grid-column:2;grid-row:1;" onclick="pressPercent()">%</button>
     <button class="key op" style="grid-column:3;grid-row:1;" onclick="backspace()" title="Backspace">
       <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414-6.414a2 2 0 011.414-.586H19a2 2 0 012 2v12a2 2 0 01-2 2h-8.172a2 2 0 01-1.414-.586L3 12z"/></svg>
@@ -1500,11 +1516,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   /* ---------- state ---------- */
   var currentMrpInput = "0";
-  // Normal-calculator engine state (chained +,-,x,/,% just like a pocket calculator).
+  // Normal-calculator engine state — mirrors the iPhone Calculator's own behavior:
+  // chained +,-,x,/,%, a live expression trail, +/- sign toggle, AC-vs-C, repeat-"=" and
+  // a divide-by-zero Error state.
   var calcAccumulator = null;   // value carried over from the previous operator press
   var calcPendingOp = null;     // '+', '−', '×', '÷' waiting to be applied
   var calcJustEvaluated = false; // true right after "=" — pressing a digit starts fresh
   var calcStartFresh = false;    // true right after an operator/%/= — next digit starts a new number
+  var calcLastOp = null;         // last operator used, for repeating "=" (like Apple's calculator)
+  var calcLastOperand = null;    // last right-hand operand, for repeating "="
+  var calcLastExprA = null;      // left-hand value used in the most recent "=", for the trail text
+  var calcError = false;         // true after a divide-by-zero — cleared by AC or a fresh digit
   // Which screen is showing — always starts on Offer Calc, the person can switch to a plain
   // Normal Calculator with the header button. Not persisted, so every fresh open is Offer Calc.
   var appMode = 'offer';
@@ -1526,6 +1548,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   /* ---------- element refs ---------- */
   var mrpDisplay = document.getElementById('mrp-display');
+  var calcExprTrailEl = document.getElementById('calc-expr-trail');
+  var calcAcLabelEl = document.getElementById('calc-ac-label');
   var activeDiscBadge = document.getElementById('active-disc-badge');
   var liveSaved = document.getElementById('live-saved');
   var liveFinal = document.getElementById('live-final');
@@ -1679,7 +1703,48 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   /* ---------- keypad ---------- */
+  // calcShouldShowAC(): true whenever the Clear key should read "AC" (clears the whole
+  // calculation) rather than "C" (clears just the current entry, keeping the expression
+  // in progress) — this is exactly how the iPhone Calculator's own Clear key behaves.
+  function calcShouldShowAC(){
+    return calcError || calcJustEvaluated || (currentMrpInput === "0" && calcAccumulator === null && calcPendingOp === null);
+  }
+  function trailNum(n){
+    if (n === null || n === undefined) return "";
+    return round2(n).toString();
+  }
+  // The live expression trail shown above the result (e.g. "500+200"), computed fresh from
+  // state each time rather than tracked separately, so it can never drift out of sync.
+  function calcExprTrailText(){
+    if (appMode !== 'calc' || calcError) return "";
+    if (calcJustEvaluated && calcLastOp !== null && calcLastExprA !== null){
+      return trailNum(calcLastExprA) + calcLastOp + trailNum(calcLastOperand) + "=";
+    }
+    if (calcPendingOp !== null){
+      var second = calcStartFresh ? "" : currentMrpInput;
+      return trailNum(calcAccumulator) + calcPendingOp + second;
+    }
+    return "";
+  }
+  function triggerCalcError(){
+    calcError = true;
+    currentMrpInput = "Error";
+    calcAccumulator = null;
+    calcPendingOp = null;
+    calcJustEvaluated = false;
+    calcStartFresh = true;
+    updateLivePreview();
+  }
   function appendValue(val){
+    if (calcError){
+      // Any fresh digit after an Error (e.g. ÷0) starts a brand new calculation, just like
+      // tapping AC first would.
+      calcError = false;
+      calcAccumulator = null; calcPendingOp = null; calcJustEvaluated = false; calcStartFresh = false;
+      currentMrpInput = (val === ".") ? "0." : val;
+      updateLivePreview();
+      return;
+    }
     if (calcStartFresh){
       currentMrpInput = (val === ".") ? "0." : val;
       calcStartFresh = false;
@@ -1691,21 +1756,41 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       currentMrpInput = val;
     } else {
       if (val === "." && currentMrpInput.includes(".")) return;
-      if (currentMrpInput.replace(".", "").length >= 9) return;
+      if (currentMrpInput.replace("-", "").replace(".", "").length >= 9) return;
       currentMrpInput += val;
     }
     updateLivePreview();
   }
   function backspace(){
+    if (calcError){ clearCalculator(); return; }
     currentMrpInput = currentMrpInput.length > 1 ? currentMrpInput.slice(0, -1) : "0";
     updateLivePreview();
   }
+  // +/- sign toggle — one of the iPhone Calculator's core keys. Flips the sign of whatever
+  // is currently on screen; 0 stays 0 (Apple's calculator never shows "-0").
+  function toggleSign(){
+    if (calcError) return;
+    if (currentMrpInput === "0") return;
+    currentMrpInput = currentMrpInput.charAt(0) === "-" ? currentMrpInput.slice(1) : "-" + currentMrpInput;
+    updateLivePreview();
+  }
   function clearCalculator(){
-    currentMrpInput = "0";
-    calcAccumulator = null;
-    calcPendingOp = null;
-    calcJustEvaluated = false;
-    calcStartFresh = false;
+    if (appMode === 'calc' && !calcShouldShowAC()){
+      // "C" — clear only the current entry; the operator and first operand stay live so
+      // typing continues the same expression (exactly like Apple's calculator).
+      currentMrpInput = "0";
+    } else {
+      // "AC" — full reset.
+      currentMrpInput = "0";
+      calcAccumulator = null;
+      calcPendingOp = null;
+      calcJustEvaluated = false;
+      calcStartFresh = false;
+      calcLastOp = null;
+      calcLastOperand = null;
+      calcLastExprA = null;
+      calcError = false;
+    }
     updateLivePreview();
   }
   function applyOp(a, b, op){
@@ -1714,13 +1799,22 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       case '+': return a + b;
       case '−': return a - b;
       case '×': return a * b;
-      case '÷': return b === 0 ? a : a / b;
+      case '÷': return a / b;
       default: return b;
     }
   }
   function pressOperator(op){
+    if (calcError) return;
     var current = safeFloat(currentMrpInput);
-    if (calcPendingOp !== null && !calcStartFresh){
+    if (calcPendingOp !== null){
+      if (calcStartFresh){
+        // Changing your mind about the operator (e.g. + then ×) before typing the next
+        // number just swaps it — nothing is recomputed yet, matching Apple's calculator.
+        calcPendingOp = op;
+        updateLivePreview();
+        return;
+      }
+      if (calcPendingOp === '÷' && current === 0){ triggerCalcError(); return; }
       calcAccumulator = applyOp(calcAccumulator, current, calcPendingOp);
     } else {
       calcAccumulator = current;
@@ -1732,9 +1826,26 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     updateLivePreview();
   }
   function pressEquals(){
-    if (calcPendingOp === null) return;
-    var current = safeFloat(currentMrpInput);
-    var result = applyOp(calcAccumulator, current, calcPendingOp);
+    if (calcError) return;
+    var a, op, b;
+    if (calcPendingOp !== null){
+      a = calcAccumulator;
+      op = calcPendingOp;
+      b = safeFloat(currentMrpInput);
+    } else if (calcLastOp !== null){
+      // Repeating "=" re-applies the last operation to the current result, just like a
+      // real calculator (e.g. 5 + 2 = = = keeps adding 2).
+      a = safeFloat(currentMrpInput);
+      op = calcLastOp;
+      b = calcLastOperand;
+    } else {
+      return;
+    }
+    if (op === '÷' && b === 0){ triggerCalcError(); return; }
+    var result = applyOp(a, b, op);
+    calcLastOp = op;
+    calcLastOperand = b;
+    calcLastExprA = a;
     currentMrpInput = round2(result).toString();
     calcAccumulator = null;
     calcPendingOp = null;
@@ -1743,20 +1854,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     updateLivePreview();
   }
   function pressPercent(){
+    if (calcError) return;
     var current = safeFloat(currentMrpInput);
     var result;
-    if (calcPendingOp !== null && calcAccumulator !== null){
+    // Apple's own percent rule: with a pending + or −, % means "that percent OF the first
+    // number" (500 + 10% = 500 + 50); with × or ÷, or nothing pending, it's just /100.
+    if (calcPendingOp === '+' || calcPendingOp === '−'){
       result = calcAccumulator * (current / 100);
     } else {
       result = current / 100;
     }
     currentMrpInput = round2(result).toString();
-    // Percent finishes the calculation on the spot (like a pocket calculator's % key) —
-    // clear the pending operator so a later "=" doesn't re-apply it to this result.
-    calcAccumulator = null;
-    calcPendingOp = null;
-    calcJustEvaluated = true;
+    // Unlike a plain "finish the calc" % key, this does NOT clear the pending operator —
+    // pressing "=" afterwards still applies it, exactly like the iPhone Calculator.
     calcStartFresh = true;
+    calcJustEvaluated = false;
     updateLivePreview();
   }
 
@@ -1867,6 +1979,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   /* ---------- live preview + bill items ---------- */
   function updateLivePreview(){
     mrpDisplay.textContent = currentMrpInput;
+    if (calcExprTrailEl) calcExprTrailEl.textContent = calcExprTrailText();
+    if (calcAcLabelEl) calcAcLabelEl.textContent = calcShouldShowAC() ? "AC" : "C";
     var mrp = safeFloat(currentMrpInput);
     var saved = round2(mrp * (currentDiscountPct / 100));
     var final = round2(Math.max(0, mrp - saved));
@@ -2411,6 +2525,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   window.pressOperator = pressOperator;
   window.pressEquals = pressEquals;
   window.pressPercent = pressPercent;
+  window.toggleSign = toggleSign;
   window.toggleAppMode = toggleAppMode;
   window.toggleScrapSection = toggleScrapSection;
   window.calculateExchangeValue = calculateExchangeValue;
