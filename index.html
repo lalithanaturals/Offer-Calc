@@ -65,6 +65,18 @@
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   button, input, a, .disc-chip, .pct-pill, .brand, .icon-btn{ touch-action:manipulation; }
   html{ height:100%; }
+
+  /* Universal "I pressed this" feedback — every button and tappable element in the app
+     dips and darkens slightly the instant it's pressed, even ones that don't have their
+     own custom :active style below (those more specific rules still win where they exist,
+     this is just the baseline so nothing in the app is ever silent to the touch). */
+  button, [role="button"]{
+    transition:transform .08s ease, filter .08s ease, opacity .08s ease;
+  }
+  button:active, [role="button"]:active{
+    transform:scale(0.95);
+    filter:brightness(1.15);
+  }
   body{
     margin:0;
     background:var(--bg);
@@ -695,7 +707,7 @@
 
   <!-- Scrap Exchange -->
   <div class="scrap">
-    <div class="scrap-head" onclick="toggleScrapSection()">
+    <div class="scrap-head" onclick="toggleScrapSection()" role="button">
       <div class="scrap-head-left">
         <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         <div>
@@ -1503,6 +1515,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 (function(){
   'use strict';
 
+  // iOS Safari (and installed/Home-Screen PWAs especially) only honors the CSS :active
+  // state on a tap when *some* touchstart listener exists on the page — otherwise every
+  // press-feedback rule above silently never shows. This empty listener is the standard
+  // fix; it makes every button's press animation actually appear on iPhone.
+  document.addEventListener('touchstart', function(){}, { passive: true });
+
   /* ---------- storage helpers (never let a blocked/full localStorage crash the app) ---------- */
   function lsGet(key, fallback){
     try{
@@ -1527,6 +1545,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var calcLastOperand = null;    // last right-hand operand, for repeating "="
   var calcLastExprA = null;      // left-hand value used in the most recent "=", for the trail text
   var calcError = false;         // true after a divide-by-zero — cleared by AC or a fresh digit
+  // The full running expression (e.g. "500+200-50x") — keeps growing with every operator
+  // you chain, all the way until "=" is pressed, instead of collapsing down to just the
+  // last two numbers. This is what makes the trail above the result read the whole
+  // calculation, exactly like the iPhone Calculator's own history line.
+  var calcExprText = "";
   // Which screen is showing — always starts on Offer Calc, the person can switch to a plain
   // Normal Calculator with the header button. Not persisted, so every fresh open is Offer Calc.
   var appMode = 'offer';
@@ -1713,16 +1736,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (n === null || n === undefined) return "";
     return round2(n).toString();
   }
-  // The live expression trail shown above the result (e.g. "500+200"), computed fresh from
-  // state each time rather than tracked separately, so it can never drift out of sync.
+  // The live expression trail shown above the result. calcExprText holds everything
+  // already committed to the chain (e.g. "500+200−"); this just adds whatever's currently
+  // being typed for the next number, so the full calculation stays visible the whole time
+  // you keep chaining operators — right up until "=" freezes it.
   function calcExprTrailText(){
     if (appMode !== 'calc' || calcError) return "";
-    if (calcJustEvaluated && calcLastOp !== null && calcLastExprA !== null){
-      return trailNum(calcLastExprA) + calcLastOp + trailNum(calcLastOperand) + "=";
-    }
+    if (calcJustEvaluated) return calcExprText;
     if (calcPendingOp !== null){
       var second = calcStartFresh ? "" : currentMrpInput;
-      return trailNum(calcAccumulator) + calcPendingOp + second;
+      return calcExprText + second;
     }
     return "";
   }
@@ -1733,6 +1756,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     calcPendingOp = null;
     calcJustEvaluated = false;
     calcStartFresh = true;
+    calcExprText = "";
     updateLivePreview();
   }
   function appendValue(val){
@@ -1741,11 +1765,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       // tapping AC first would.
       calcError = false;
       calcAccumulator = null; calcPendingOp = null; calcJustEvaluated = false; calcStartFresh = false;
+      calcExprText = "";
       currentMrpInput = (val === ".") ? "0." : val;
       updateLivePreview();
       return;
     }
     if (calcStartFresh){
+      if (calcJustEvaluated){
+        // A fresh digit right after "=" starts a brand new calculation — the old chain's
+        // trail shouldn't linger once you're typing a new one.
+        calcExprText = "";
+      }
       currentMrpInput = (val === ".") ? "0." : val;
       calcStartFresh = false;
       calcJustEvaluated = false;
@@ -1790,6 +1820,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       calcLastOperand = null;
       calcLastExprA = null;
       calcError = false;
+      calcExprText = "";
     }
     updateLivePreview();
   }
@@ -1810,14 +1841,20 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       if (calcStartFresh){
         // Changing your mind about the operator (e.g. + then ×) before typing the next
         // number just swaps it — nothing is recomputed yet, matching Apple's calculator.
+        // The trail swaps with it (e.g. "500+" becomes "500×").
+        calcExprText = calcExprText.slice(0, -1) + op;
         calcPendingOp = op;
         updateLivePreview();
         return;
       }
       if (calcPendingOp === '÷' && current === 0){ triggerCalcError(); return; }
       calcAccumulator = applyOp(calcAccumulator, current, calcPendingOp);
+      // Keep growing the chain instead of collapsing to just the running total — this is
+      // what keeps the whole calculation ("500+200−50×") visible until "=" is pressed.
+      calcExprText += currentMrpInput + op;
     } else {
       calcAccumulator = current;
+      calcExprText = currentMrpInput + op;
     }
     calcPendingOp = op;
     calcStartFresh = true;
@@ -1827,17 +1864,19 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   function pressEquals(){
     if (calcError) return;
-    var a, op, b;
+    var a, op, b, frozenExpr;
     if (calcPendingOp !== null){
       a = calcAccumulator;
       op = calcPendingOp;
       b = safeFloat(currentMrpInput);
+      frozenExpr = calcExprText + currentMrpInput + "=";
     } else if (calcLastOp !== null){
       // Repeating "=" re-applies the last operation to the current result, just like a
       // real calculator (e.g. 5 + 2 = = = keeps adding 2).
       a = safeFloat(currentMrpInput);
       op = calcLastOp;
       b = calcLastOperand;
+      frozenExpr = trailNum(a) + op + trailNum(b) + "=";
     } else {
       return;
     }
@@ -1846,6 +1885,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     calcLastOp = op;
     calcLastOperand = b;
     calcLastExprA = a;
+    calcExprText = frozenExpr;
     currentMrpInput = round2(result).toString();
     calcAccumulator = null;
     calcPendingOp = null;
