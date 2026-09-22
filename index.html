@@ -269,29 +269,39 @@
      digit/function keys (width == height, driven by aspect-ratio so they stay perfect
      circles at any screen width), a pill-shaped wide "0", generous gaps between them,
      and no borders for a cleaner, calmer look. */
+  /* Keypad: C/Backspace get their own full-width row (no "00" taking up space anymore),
+     the digits sit below as wide rectangular keys (not squares), and ADD sits to the
+     right at half height, anchored to the top rather than filling the whole column. */
   .keypad{
     flex:0 0 auto;
-    display:grid;
-    grid-template-columns:repeat(4,74px);
-    justify-content:space-between;
-    grid-auto-rows:min-content;
-    row-gap:14px;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
   }
+  .keypad-left{ flex:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
+  .keypad-toprow{ display:flex; gap:12px; }
+  .keypad-digits{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   .key{
-    border:none; color:#fff; font-weight:600; font-size:33px;
+    border:none; color:#fff; font-weight:600; font-size:27px;
     display:flex; align-items:center; justify-content:center; background:var(--panel-2);
-    width:74px; aspect-ratio:1/1; border-radius:50%;
+    width:100%; height:64px; border-radius:18px;
   }
   .key:active{ filter:brightness(1.35); transform:scale(0.96); }
-  .key.op{ background:var(--card); font-weight:600; font-size:24px; }
-  .key.zero{ grid-column:span 2; width:100%; aspect-ratio:2/1; border-radius:999px; justify-content:flex-start; padding-left:28px; }
+  .key.op{ background:var(--card); font-weight:600; font-size:22px; }
+  /* C and Backspace fill the whole top row (the space "00" used to share with them),
+     so they're bigger and easier to hit than the digit keys below. */
+  .key.key-fn{ flex:1; height:78px; font-size:26px; border-radius:22px; }
+  .key.zero{ grid-column:span 2; justify-content:flex-start; padding-left:24px; }
   .key.add{
-    grid-row:span 5; width:74px; aspect-ratio:auto; border-radius:26px;
+    /* ~50% of the C/Backspace row + the digit grid below it combined, anchored to the
+       bottom (a percentage height doesn't resolve reliably here since the row it sits in
+       has no fixed height of its own — it's sized by its sibling's content). */
+    width:70px; height:191px; align-self:flex-end; border-radius:22px;
     background:linear-gradient(160deg,#fb923c,#ea580c);
-    display:flex; flex-direction:column; gap:5px; font-size:13px; font-weight:800; letter-spacing:.04em;
+    display:flex; flex-direction:column; gap:5px; font-size:12px; font-weight:800; letter-spacing:.04em;
     box-shadow:0 6px 18px rgba(234,88,12,0.35);
   }
-  .key.add svg{ width:24px; height:24px; }
+  .key.add svg{ width:22px; height:22px; }
   .key svg{ width:20px; height:20px; }
 
   /* Summary bar */
@@ -656,30 +666,34 @@
 
   <!-- Keypad -->
   <div class="keypad">
-    <button class="key op" onclick="clearCalculator()">C</button>
-    <button class="key op" onclick="appendValue('00')">00</button>
-    <button class="key op" onclick="backspace()" title="Backspace">
-      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414-6.414a2 2 0 011.414-.586H19a2 2 0 012 2v12a2 2 0 01-2 2h-8.172a2 2 0 01-1.414-.586L3 12z"/></svg>
-    </button>
+    <div class="keypad-left">
+      <div class="keypad-toprow">
+        <button class="key op key-fn" onclick="clearCalculator()">C</button>
+        <button class="key op key-fn" onclick="backspace()" title="Backspace">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414-6.414a2 2 0 011.414-.586H19a2 2 0 012 2v12a2 2 0 01-2 2h-8.172a2 2 0 01-1.414-.586L3 12z"/></svg>
+        </button>
+      </div>
+      <div class="keypad-digits">
+        <button class="key" onclick="appendValue('7')">7</button>
+        <button class="key" onclick="appendValue('8')">8</button>
+        <button class="key" onclick="appendValue('9')">9</button>
+
+        <button class="key" onclick="appendValue('4')">4</button>
+        <button class="key" onclick="appendValue('5')">5</button>
+        <button class="key" onclick="appendValue('6')">6</button>
+
+        <button class="key" onclick="appendValue('1')">1</button>
+        <button class="key" onclick="appendValue('2')">2</button>
+        <button class="key" onclick="appendValue('3')">3</button>
+
+        <button class="key zero" onclick="appendValue('0')">0</button>
+        <button class="key" onclick="appendValue('.')">.</button>
+      </div>
+    </div>
     <button class="key add" onclick="addItem()">
       <svg fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
       <span>ADD</span>
     </button>
-
-    <button class="key" onclick="appendValue('7')">7</button>
-    <button class="key" onclick="appendValue('8')">8</button>
-    <button class="key" onclick="appendValue('9')">9</button>
-
-    <button class="key" onclick="appendValue('4')">4</button>
-    <button class="key" onclick="appendValue('5')">5</button>
-    <button class="key" onclick="appendValue('6')">6</button>
-
-    <button class="key" onclick="appendValue('1')">1</button>
-    <button class="key" onclick="appendValue('2')">2</button>
-    <button class="key" onclick="appendValue('3')">3</button>
-
-    <button class="key zero" onclick="appendValue('0')">0</button>
-    <button class="key" onclick="appendValue('.')">.</button>
   </div>
 
   <!-- Summary -->
