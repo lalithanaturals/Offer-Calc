@@ -109,6 +109,7 @@
   /* Header */
   header{
     flex:0 0 auto;
+    position:relative;
     display:flex;
     align-items:center;
     justify-content:space-between;
@@ -136,13 +137,23 @@
   .icon-btn:active{ background:var(--card); transform:scale(0.94); }
   .icon-btn svg{ width:17px; height:17px; }
 
-  /* Scrap exchange */
-  .scrap{
-    flex:0 0 auto;
-    background:var(--panel);
-    border-radius:var(--radius-md);
-    padding:7px 10px;
+  /* Mode switch — a wider pill, centered in the header, for quick one-tap access between
+     the two calculators. */
+  .mode-pill{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    border:none; border-radius:22px;
+    background:linear-gradient(160deg,#fb923c,#ea580c); color:#fff;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:9px 18px; font-weight:800; font-size:13px; letter-spacing:.02em;
+    box-shadow:0 4px 12px rgba(234,88,12,0.32);
+    white-space:nowrap;
   }
+  .mode-pill:active{ filter:brightness(1.08); transform:translate(-50%,-50%) scale(0.95); }
+  .mode-pill svg{ width:15px; height:15px; flex:0 0 auto; }
+  .app.mode-calc .mode-pill{
+    background:linear-gradient(160deg,#22c55e,#16a34a); box-shadow:0 4px 12px rgba(22,163,74,0.32);
+  }
+
   .scrap-head{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
   .scrap-head-left{ display:flex; align-items:center; gap:8px; min-width:0; }
   .scrap-head-left svg{ width:17px; height:17px; color:var(--accent); flex:0 0 auto; }
@@ -269,40 +280,119 @@
      digit/function keys (width == height, driven by aspect-ratio so they stay perfect
      circles at any screen width), a pill-shaped wide "0", generous gaps between them,
      and no borders for a cleaner, calmer look. */
-  /* Keypad: C/Backspace get their own full-width row (no "00" taking up space anymore),
-     the digits sit below as wide rectangular keys (not squares), and ADD sits to the
-     right at half height, anchored to the top rather than filling the whole column. */
-  .keypad{
+  /* ---- Offer Calc keypad: plain digit entry + a built-in ADD key, no arithmetic
+     operators — C/Backspace share a full-width top row, digits are wide rectangles,
+     and ADD sits to the right at half height. This is the app's original keypad. ---- */
+  #keypad-offer{
     flex:0 0 auto;
     display:flex;
     align-items:flex-start;
     gap:12px;
   }
-  .keypad-left{ flex:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
-  .keypad-toprow{ display:flex; gap:12px; }
-  .keypad-digits{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  .key{
+  #keypad-offer .keypad-left{ flex:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
+  #keypad-offer .keypad-toprow{ display:flex; gap:12px; }
+  #keypad-offer .keypad-digits{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  #keypad-offer .key{
     border:none; color:#fff; font-weight:600; font-size:27px;
     display:flex; align-items:center; justify-content:center; background:var(--panel-2);
     width:100%; height:64px; border-radius:18px;
   }
-  .key:active{ filter:brightness(1.35); transform:scale(0.96); }
-  .key.op{ background:var(--card); font-weight:600; font-size:22px; }
-  /* C and Backspace fill the whole top row (the space "00" used to share with them),
-     so they're bigger and easier to hit than the digit keys below. */
-  .key.key-fn{ flex:1; height:78px; font-size:26px; border-radius:22px; }
-  .key.zero{ grid-column:span 2; justify-content:flex-start; padding-left:24px; }
-  .key.add{
-    /* ~50% of the C/Backspace row + the digit grid below it combined, anchored to the
-       bottom (a percentage height doesn't resolve reliably here since the row it sits in
-       has no fixed height of its own — it's sized by its sibling's content). */
+  #keypad-offer .key:active{ filter:brightness(1.35); transform:scale(0.96); }
+  #keypad-offer .key.op{ background:var(--card); font-weight:600; font-size:22px; }
+  #keypad-offer .key.key-fn{ flex:1; height:78px; font-size:26px; border-radius:22px; }
+  #keypad-offer .key.zero{ grid-column:span 2; justify-content:flex-start; padding-left:24px; }
+  #keypad-offer .key.add{
     width:70px; height:191px; align-self:flex-end; border-radius:22px;
     background:linear-gradient(160deg,#fb923c,#ea580c);
     display:flex; flex-direction:column; gap:5px; font-size:12px; font-weight:800; letter-spacing:.04em;
     box-shadow:0 6px 18px rgba(234,88,12,0.35);
   }
-  .key.add svg{ width:22px; height:22px; }
-  .key svg{ width:20px; height:20px; }
+  #keypad-offer .key.add svg{ width:22px; height:22px; }
+  #keypad-offer .key svg{ width:20px; height:20px; }
+
+  /* ---- Normal Calculator keypad: a full 4x5 arithmetic grid — C / % / ⌫ / ÷ across the
+     top, then digits with ×, −, + down the right column, and 0 / . / = along the bottom. ---- */
+  #keypad-calc{
+    flex:0 0 auto;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    grid-auto-rows:60px;
+    gap:10px;
+  }
+  #keypad-calc .key{
+    border:none; color:#fff; font-weight:600; font-size:24px;
+    display:flex; align-items:center; justify-content:center; background:var(--panel-2);
+    width:100%; height:100%; border-radius:16px;
+  }
+  #keypad-calc .key:active{ filter:brightness(1.35); transform:scale(0.96); }
+  #keypad-calc .key.op{ background:var(--card); font-weight:600; font-size:21px; }
+  #keypad-calc .key.op-accent{
+    background:linear-gradient(160deg,#fb923c,#ea580c); color:#fff; font-weight:700; font-size:25px;
+    box-shadow:0 4px 12px rgba(234,88,12,0.3);
+  }
+  #keypad-calc .key.op-accent.equals{ background:linear-gradient(160deg,#22c55e,#16a34a); box-shadow:0 4px 12px rgba(22,163,74,0.3); }
+  #keypad-calc .key.zero{ justify-content:flex-start; padding-left:24px; }
+  /* The "+" key spans two grid rows (set inline on the button) so it's visibly bigger
+     than the other operators — give it a bigger symbol to match. */
+  #keypad-calc .key.key-plus{ font-size:38px; font-weight:800; }
+  #keypad-calc .key svg{ width:20px; height:20px; }
+
+  /* Only one keypad shows at a time, matching the current mode. */
+  #keypad-calc{ display:none; }
+  .app.mode-calc #keypad-offer{ display:none; }
+  .app.mode-calc #keypad-calc{ display:grid; }
+
+  /* Normal Calculator mode — hide everything Offer-Calc-specific (discount %, scrap,
+     the offer summary bar), but keep the item name field and its own Add Item + View Bill
+     so items can still be added while using the plain calculator. */
+  .app.mode-calc .scrap,
+  .app.mode-calc .disc-row,
+  .app.mode-calc #discount-chips,
+  .app.mode-calc .summary,
+  .app.mode-calc #active-disc-badge,
+  .app.mode-calc .display-badge-r,
+  .app.mode-calc .dv-final{
+    display:none !important;
+  }
+  /* Big empty black space above the number, like the iPhone Calculator: the display
+     becomes a flexible spacer that grows to fill whatever room is left between the header
+     and the keypad, pushing the number down to sit just above the keys instead of hugging
+     the top. .app already has min-height:100vh/100dvh, so on a tall screen this spacer
+     stretches the whole app to fill the screen instead of leaving a gap at the bottom. */
+  .app.mode-calc .display{
+    flex:1 1 auto;
+    background:transparent; border:none; box-shadow:none; border-radius:0;
+    padding:0 6px 10px;
+    display:flex; flex-direction:column; justify-content:flex-end;
+  }
+  .app.mode-calc .display-top{ display:none; }
+  .app.mode-calc #keypad-calc{ flex:0 0 auto; grid-auto-rows:64px; gap:10px; }
+  .app.mode-calc #keypad-calc .key{ font-size:26px; }
+  .app.mode-calc #keypad-calc .key.op{ font-size:22px; }
+  .app.mode-calc #keypad-calc .key.op-accent{ font-size:27px; }
+  .app.mode-calc #keypad-calc .key.key-plus{ font-size:38px; }
+  .app.mode-calc .display-values{ justify-content:flex-end; }
+  .app.mode-calc .dv-mrp{ width:100%; text-align:right; }
+  .app.mode-calc .dv-mrp .l{ display:none; }
+  .app.mode-calc #mrp-display{ font-size:clamp(48px,15vw,72px); color:#fff; font-weight:600; max-width:100%; }
+
+  /* Add Item — only for Normal Calculator (Offer Calc's ADD key is built into its own
+     keypad). Now a grid cell that sits beside "=" in the keypad's last row, rather than a
+     standalone full-width bar below the keypad. */
+  #calc-add-item-btn{ display:none; }
+  .app.mode-calc #calc-add-item-btn{
+    border:none; border-radius:16px;
+    background:linear-gradient(160deg,#fb923c,#ea580c); color:#fff; font-weight:800; font-size:14px;
+    letter-spacing:.03em; display:flex; align-items:center; justify-content:center; gap:7px;
+    box-shadow:0 6px 18px rgba(234,88,12,0.3);
+  }
+  .app.mode-calc #calc-add-item-btn:active{ filter:brightness(1.1); transform:scale(0.96); }
+  .app.mode-calc #calc-add-item-btn svg{ width:18px; height:18px; }
+
+  /* Calc mode's own action row — mirrors Offer Calc's summary-actions row (same classes,
+     same spacing) so both layouts feel consistent: View Bill / Mix Bill / Reset. */
+  #calc-actions{ display:none; }
+  .app.mode-calc #calc-actions{ display:flex; }
 
   /* Summary bar */
   .summary{
@@ -374,6 +464,7 @@
   .item-badge{ font-size:9.5px; font-weight:800; padding:2px 6px; border-radius:6px; margin-left:6px; }
   .item-badge.pct{ background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent-line); }
   .item-badge.direct{ background:var(--card); color:#ccc; }
+  .item-badge.src{ background:rgba(255,255,255,0.08); color:var(--text-dim); }
   .item-sub{ font-size:10px; color:var(--text-faint); margin-top:2px; }
   .item-sub b{ color:var(--green); font-weight:800; }
   .item-right{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
@@ -432,9 +523,12 @@
   .confirm-icon svg{ width:26px; height:26px; }
   #confirm-title{ font-size:16px; font-weight:800; color:#fff; margin:0 0 6px; }
   #confirm-desc{ font-size:12.5px; color:var(--text-dim); margin:0 0 16px; line-height:1.4; }
-  .confirm-btns{ display:flex; gap:9px; width:100%; }
-  .btn-cancel{ background:var(--panel-2); color:#d4d4d4; border:1px solid var(--line); flex:1; padding:12px 0; border-radius:14px; font-weight:800; font-size:13px; }
-  .btn-yes{ background:var(--red); color:#fff; flex:1; padding:12px 0; border-radius:14px; font-weight:800; font-size:13px; border:none; }
+  /* Big, easy-to-hit buttons for the confirmation dialog (Reset, Delete, etc.) — stacked
+     full-width rather than a cramped side-by-side pair. */
+  .confirm-btns{ display:flex; flex-direction:column; gap:10px; width:100%; }
+  .btn-cancel{ background:var(--panel-2); color:#d4d4d4; border:1px solid var(--line); width:100%; padding:17px 0; border-radius:16px; font-weight:800; font-size:16px; }
+  .btn-yes{ background:var(--red); color:#fff; width:100%; padding:17px 0; border-radius:16px; font-weight:800; font-size:16px; border:none; }
+  .btn-cancel:active, .btn-yes:active{ transform:scale(0.97); }
 
   /* Settings modal (manage %) */
   .settings-add-row{ display:flex; gap:9px; margin-bottom:14px; }
@@ -553,6 +647,12 @@
         <span>Lalitha Naturals</span>
       </div>
     </div>
+    <!-- Mode switch — wider pill, centered in the header, for quick one-tap access between
+         the two calculators. -->
+    <button class="mode-pill" id="mode-toggle-btn" onclick="toggleAppMode()" title="Switch to Normal Calculator">
+      <svg fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path stroke-linecap="round" d="M8 7h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01"/></svg>
+      <span id="mode-toggle-label">Calculator</span>
+    </button>
     <div class="header-actions">
       <button class="icon-btn" onclick="shareApp()" title="Share this app">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342a4 4 0 100-2.684m0 2.684a4 4 0 010-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a4 4 0 105.367-5.367 4 4 0 00-5.367 5.367zm0 9.316a4 4 0 105.367 5.367 4 4 0 00-5.367-5.367z"/></svg>
@@ -664,8 +764,9 @@
   </div>
   <div id="discount-chips" class="disc-chips"></div>
 
-  <!-- Keypad -->
-  <div class="keypad">
+  <!-- Offer Calc keypad: plain digit entry with a built-in ADD key (this app's original
+       keypad — no arithmetic operators, since MRP entry doesn't need them). -->
+  <div class="keypad" id="keypad-offer">
     <div class="keypad-left">
       <div class="keypad-toprow">
         <button class="key op key-fn" onclick="clearCalculator()">C</button>
@@ -696,6 +797,62 @@
     </button>
   </div>
 
+  <!-- Normal Calculator keypad: full arithmetic (+, −, ×, ÷, %, =). Shown only in
+       Normal Calculator mode. -->
+  <!-- 6-row grid: the "+" key spans two rows (col 4, rows 4-5) so it's noticeably bigger
+       than the other operators, and "=" moves to its own full-width row at the bottom —
+       "stretching" the keypad taller to make room for the bigger "+", while C/%/⌫/÷/×/−
+       all stay their normal single-row size. -->
+  <div class="keypad" id="keypad-calc">
+    <button class="key op" style="grid-column:1;grid-row:1;" onclick="clearCalculator()">C</button>
+    <button class="key op" style="grid-column:2;grid-row:1;" onclick="pressPercent()">%</button>
+    <button class="key op" style="grid-column:3;grid-row:1;" onclick="backspace()" title="Backspace">
+      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414-6.414a2 2 0 011.414-.586H19a2 2 0 012 2v12a2 2 0 01-2 2h-8.172a2 2 0 01-1.414-.586L3 12z"/></svg>
+    </button>
+    <button class="key op-accent" style="grid-column:4;grid-row:1;" onclick="pressOperator('÷')">÷</button>
+
+    <button class="key" style="grid-column:1;grid-row:2;" onclick="appendValue('7')">7</button>
+    <button class="key" style="grid-column:2;grid-row:2;" onclick="appendValue('8')">8</button>
+    <button class="key" style="grid-column:3;grid-row:2;" onclick="appendValue('9')">9</button>
+    <button class="key op-accent" style="grid-column:4;grid-row:2;" onclick="pressOperator('×')">×</button>
+
+    <button class="key" style="grid-column:1;grid-row:3;" onclick="appendValue('4')">4</button>
+    <button class="key" style="grid-column:2;grid-row:3;" onclick="appendValue('5')">5</button>
+    <button class="key" style="grid-column:3;grid-row:3;" onclick="appendValue('6')">6</button>
+    <button class="key op-accent" style="grid-column:4;grid-row:3;" onclick="pressOperator('−')">−</button>
+
+    <button class="key" style="grid-column:1;grid-row:4;" onclick="appendValue('1')">1</button>
+    <button class="key" style="grid-column:2;grid-row:4;" onclick="appendValue('2')">2</button>
+    <button class="key" style="grid-column:3;grid-row:4;" onclick="appendValue('3')">3</button>
+    <button class="key op-accent key-plus" style="grid-column:4;grid-row:4 / span 2;" onclick="pressOperator('+')">+</button>
+
+    <button class="key zero" style="grid-column:1 / span 2;grid-row:5;" onclick="appendValue('0')">0</button>
+    <button class="key" style="grid-column:3;grid-row:5;" onclick="appendValue('.')">.</button>
+
+    <!-- Add Item now lives inside the grid, beside "=" in the same row (columns 1-3), so
+         "=" sits directly under "+" (column 4) instead of spanning the full row. -->
+    <button class="key add-item-key" id="calc-add-item-btn" style="grid-column:1 / span 3;grid-row:6;" onclick="addItem()">
+      <svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      <span>Add Item</span>
+    </button>
+    <button class="key op-accent equals" style="grid-column:4;grid-row:6;" onclick="pressEquals()">=</button>
+  </div>
+
+  <!-- Calc mode's own action row — same classes and spacing as Offer Calc's summary-actions
+       row below, so both layouts line up. Reset is the same shared confirmReset() as Offer
+       Calc's, so there's only ever one Reset behavior. -->
+  <div class="summary-actions" id="calc-actions">
+    <button class="btn btn-primary" onclick="openCalcBill()">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+      <span>View Bill</span>
+    </button>
+    <button class="btn btn-primary" onclick="openMixBill()" title="See Offer Calc + Normal Calculator items together">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/></svg>
+      <span>Mix Bill</span>
+    </button>
+    <button class="btn btn-danger" onclick="confirmReset()">Reset</button>
+  </div>
+
   <!-- Summary -->
   <div class="summary">
     <div class="summary-top">
@@ -717,6 +874,10 @@
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
         <span>View Bill</span>
       </button>
+      <button class="btn btn-primary" onclick="openMixBill()" title="See Offer Calc + Normal Calculator items together">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/></svg>
+        <span>Mix Bill</span>
+      </button>
       <button class="btn btn-danger" onclick="confirmReset()">Reset</button>
     </div>
   </div>
@@ -728,9 +889,9 @@
     <div class="sheet-head">
       <h3>
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-        <span>Itemized Bill</span>
+        <span id="bill-modal-title">Offer Calc Bill</span>
       </h3>
-      <button class="sheet-close" onclick="toggleBillModal()">
+      <button class="sheet-close" onclick="closeBillModal()">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
@@ -1320,10 +1481,23 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   /* ---------- state ---------- */
   var currentMrpInput = "0";
+  // Normal-calculator engine state (chained +,-,x,/,% just like a pocket calculator).
+  var calcAccumulator = null;   // value carried over from the previous operator press
+  var calcPendingOp = null;     // '+', '−', '×', '÷' waiting to be applied
+  var calcJustEvaluated = false; // true right after "=" — pressing a digit starts fresh
+  var calcStartFresh = false;    // true right after an operator/%/= — next digit starts a new number
+  // Which screen is showing — always starts on Offer Calc, the person can switch to a plain
+  // Normal Calculator with the header button. Not persisted, so every fresh open is Offer Calc.
+  var appMode = 'offer';
   var permanentPercentages = lsGet('lalitha_pcts', [25, 40]);
   if (!Array.isArray(permanentPercentages) || permanentPercentages.length === 0) permanentPercentages = [25, 40];
   var currentDiscountPct = permanentPercentages.includes(25) ? 25 : permanentPercentages[0];
-  var billItems = lsGet('lalitha_bill_items', []);
+  // Offer Calc and Normal Calculator keep separate bills by default. 'lalitha_bill_items'
+  // is the original key (Offer Calc's), kept as-is so nobody's existing data moves.
+  var offerBillItems = lsGet('lalitha_bill_items', []);
+  var calcBillItems = lsGet('lalitha_calc_bill_items', []);
+  // Which bill the Bill modal is currently showing: 'offer' | 'calc' | 'mix' (read-only).
+  var billModalSource = 'offer';
   var savedScrapData = lsGet('lalitha_scrap_data', {directAmt:"", alWt:"", alH:"", stWt:"", stH:"", active:true});
   if (savedScrapData.active === undefined) savedScrapData.active = true;
 
@@ -1338,6 +1512,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var liveFinal = document.getElementById('live-final');
   var discountChips = document.getElementById('discount-chips');
   var itemNameInput = document.getElementById('item-name-input');
+  var appRoot = document.querySelector('.app');
+  var modeToggleBtn = document.getElementById('mode-toggle-btn');
+  var modeToggleLabel = document.getElementById('mode-toggle-label');
+  var brandTitle = document.querySelector('.brand-text h1');
 
   var exDirectAmount = document.getElementById('ex-direct-amount');
   var exAluminumWeight = document.getElementById('ex-aluminum-weight');
@@ -1358,6 +1536,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var billModal = document.getElementById('bill-modal');
   var billItemsList = document.getElementById('bill-items-list');
   var modalGrandTotal = document.getElementById('modal-grand-total');
+  var billModalTitle = document.getElementById('bill-modal-title');
 
   var printPreviewModal = document.getElementById('print-preview-modal');
   var receiptPreviewContainer = document.getElementById('receipt-preview-container');
@@ -1402,7 +1581,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     renderSettingsPercentages();
     updateScrapRateLabels();
     updateLivePreview();
-    updateBillSummary();
+    refreshAll();
     registerServiceWorker();
   });
 
@@ -1482,6 +1661,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   /* ---------- keypad ---------- */
   function appendValue(val){
+    if (calcStartFresh){
+      currentMrpInput = (val === ".") ? "0." : val;
+      calcStartFresh = false;
+      calcJustEvaluated = false;
+      updateLivePreview();
+      return;
+    }
     if (currentMrpInput === "0" && val !== "."){
       currentMrpInput = val;
     } else {
@@ -1497,7 +1683,78 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   function clearCalculator(){
     currentMrpInput = "0";
+    calcAccumulator = null;
+    calcPendingOp = null;
+    calcJustEvaluated = false;
+    calcStartFresh = false;
     updateLivePreview();
+  }
+  function applyOp(a, b, op){
+    a = safeFloat(a); b = safeFloat(b);
+    switch(op){
+      case '+': return a + b;
+      case '−': return a - b;
+      case '×': return a * b;
+      case '÷': return b === 0 ? a : a / b;
+      default: return b;
+    }
+  }
+  function pressOperator(op){
+    var current = safeFloat(currentMrpInput);
+    if (calcPendingOp !== null && !calcStartFresh){
+      calcAccumulator = applyOp(calcAccumulator, current, calcPendingOp);
+    } else {
+      calcAccumulator = current;
+    }
+    calcPendingOp = op;
+    calcStartFresh = true;
+    calcJustEvaluated = false;
+    currentMrpInput = round2(calcAccumulator).toString();
+    updateLivePreview();
+  }
+  function pressEquals(){
+    if (calcPendingOp === null) return;
+    var current = safeFloat(currentMrpInput);
+    var result = applyOp(calcAccumulator, current, calcPendingOp);
+    currentMrpInput = round2(result).toString();
+    calcAccumulator = null;
+    calcPendingOp = null;
+    calcJustEvaluated = true;
+    calcStartFresh = true;
+    updateLivePreview();
+  }
+  function pressPercent(){
+    var current = safeFloat(currentMrpInput);
+    var result;
+    if (calcPendingOp !== null && calcAccumulator !== null){
+      result = calcAccumulator * (current / 100);
+    } else {
+      result = current / 100;
+    }
+    currentMrpInput = round2(result).toString();
+    // Percent finishes the calculation on the spot (like a pocket calculator's % key) —
+    // clear the pending operator so a later "=" doesn't re-apply it to this result.
+    calcAccumulator = null;
+    calcPendingOp = null;
+    calcJustEvaluated = true;
+    calcStartFresh = true;
+    updateLivePreview();
+  }
+
+  /* ---------- mode switch: Offer Calc <-> Normal Calculator ---------- */
+  function applyAppMode(){
+    var isCalc = appMode === 'calc';
+    if (appRoot) appRoot.classList.toggle('mode-calc', isCalc);
+    if (modeToggleLabel) modeToggleLabel.textContent = isCalc ? 'Offer Calc' : 'Calculator';
+    if (modeToggleBtn) modeToggleBtn.title = isCalc ? 'Switch to Offer Calc' : 'Switch to Normal Calculator';
+    if (brandTitle) brandTitle.textContent = isCalc ? 'Calculator' : 'Offer Calc';
+  }
+  function toggleAppMode(){
+    appMode = (appMode === 'offer') ? 'calc' : 'offer';
+    // Start each screen with a clean slate so a leftover number from the other
+    // calculator never gets mistaken for this one's value.
+    clearCalculator();
+    applyAppMode();
   }
 
   /* ---------- scrap exchange ---------- */
@@ -1564,7 +1821,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     savedScrapData = {directAmt:"", alWt:"", alH:"", stWt:"", stH:"", active:true};
     saveScrapStorage();
     updateLivePreview();
-    updateBillSummary();
+    refreshAll();
   }
 
   function confirmClearScrap(e){
@@ -1578,7 +1835,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function toggleScrapActive(){
     savedScrapData.active = savedScrapData.active === false ? true : false;
     saveScrapStorage();
-    updateBillSummary();
+    refreshAll();
   }
 
   function confirmDeleteScrap(){
@@ -1598,34 +1855,38 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     liveFinal.textContent = formatCurrency(final);
     activeDiscBadge.textContent = currentDiscountPct + '% OFF Active';
     getCurrentExchangeValuesObj();
-    updateBillSummary();
+    refreshAll();
   }
 
   function addItem(){
     var mrp = safeFloat(currentMrpInput);
     if (mrp <= 0){
-      showToast('Enter an MRP greater than 0!');
+      showToast('Enter an amount greater than 0!');
       return;
     }
-    var saved = round2(mrp * (currentDiscountPct / 100));
-    var final = round2(Math.max(0, mrp - saved));
+    var isCalc = appMode === 'calc';
+    // Normal Calculator has no discount concept — items there go in at face value.
+    var saved = isCalc ? 0 : round2(mrp * (currentDiscountPct / 100));
+    var final = isCalc ? mrp : round2(Math.max(0, mrp - saved));
     var name = itemNameInput ? itemNameInput.value.trim().slice(0, 40) : "";
-    billItems.push({
+    var targetItems = isCalc ? calcBillItems : offerBillItems;
+    targetItems.push({
       id: Date.now() + Math.random(),
       type: 'product',
+      source: isCalc ? 'calc' : 'offer',
       name: name,
       mrp: mrp,
-      discountPct: currentDiscountPct,
+      discountPct: isCalc ? 0 : currentDiscountPct,
       saved: saved,
       final: final,
       active: true
     });
-    saveStorage();
+    saveBillStorage(isCalc ? 'calc' : 'offer');
     currentMrpInput = "0";
     if (itemNameInput) itemNameInput.value = "";
     updateLivePreview();
-    updateBillSummary();
-    showToast('Added ' + (name ? name + ' — ' : '') + '₹' + mrp.toLocaleString('en-IN') + ' (' + currentDiscountPct + '%)');
+    refreshAll();
+    showToast('Added ' + (name ? name + ' — ' : '') + '₹' + mrp.toLocaleString('en-IN') + (isCalc ? '' : ' (' + currentDiscountPct + '%)'));
   }
 
   /* ---------- direct amount modal ---------- */
@@ -1644,9 +1905,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }
     finalAmt = round2(finalAmt);
     var name = directModalName ? directModalName.value.trim().slice(0, 40) : "";
-    billItems.push({
+    // "+ Add Direct Amount" only exists in Offer Calc's UI, so this always goes there.
+    offerBillItems.push({
       id: Date.now() + Math.random(),
       type: 'product',
+      source: 'offer',
       name: name,
       mrp: finalAmt,
       discountPct: 0,
@@ -1654,31 +1917,49 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       final: finalAmt,
       active: true
     });
-    saveStorage();
+    saveBillStorage('offer');
     closeDirectModal();
-    updateBillSummary();
+    refreshAll();
     showToast('Added ' + (name ? name + ' — ' : '') + '₹' + finalAmt.toLocaleString('en-IN'));
   }
 
+  // Items live in two separate lists (Offer Calc / Normal Calculator); the Bill modal's
+  // rows can show either one alone or both mixed together, so toggling/removing by id
+  // has to search whichever list actually holds that item.
+  function findBillItem(id){
+    var idx = offerBillItems.findIndex(function(i){ return i.id === id; });
+    if (idx >= 0) return { list: offerBillItems, idx: idx, mode: 'offer' };
+    idx = calcBillItems.findIndex(function(i){ return i.id === id; });
+    if (idx >= 0) return { list: calcBillItems, idx: idx, mode: 'calc' };
+    return null;
+  }
+
   function toggleItemActive(id){
-    var item = billItems.find(function(i){ return i.id === id; });
-    if (item){
+    var found = findBillItem(id);
+    if (found){
+      var item = found.list[found.idx];
       item.active = item.active === false ? true : false;
-      saveStorage();
-      updateBillSummary();
+      saveBillStorage(found.mode);
+      refreshAll();
     }
   }
 
   function confirmRemoveItem(id){
     openConfirmModal('Delete Item', 'Remove this item from the bill?', function(){
-      billItems = billItems.filter(function(item){ return item.id !== id; });
-      saveStorage();
-      updateBillSummary();
-      showToast('Item removed.');
+      var found = findBillItem(id);
+      if (found){
+        found.list.splice(found.idx, 1);
+        saveBillStorage(found.mode);
+        refreshAll();
+        showToast('Item removed.');
+      }
     });
   }
 
-  function saveStorage(){ lsSet('lalitha_bill_items', billItems); }
+  function saveBillStorage(mode){
+    if (mode === 'calc') lsSet('lalitha_calc_bill_items', calcBillItems);
+    else lsSet('lalitha_bill_items', offerBillItems);
+  }
 
   function shareApp(){
     // Called synchronously from the button's onclick (a real user gesture), so the OS
@@ -1703,20 +1984,30 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   function confirmReset(){
-    openConfirmModal('Reset Everything', 'This clears all bill items and scrap exchange data. This cannot be undone.', function(){
+    openConfirmModal('Reset Everything', 'This clears all bill items (Offer Calc + Normal Calculator) and scrap exchange data. This cannot be undone.', function(){
       currentMrpInput = "0";
       clearScrapValues();
-      billItems = [];
+      offerBillItems = [];
+      calcBillItems = [];
       lsSet('lalitha_bill_items', []);
+      lsSet('lalitha_calc_bill_items', []);
       updateLivePreview();
-      updateBillSummary();
+      refreshAll();
       showToast('All data reset.');
     });
   }
 
-  function computeTotals(){
+  // Which items feed a given view of the Bill modal — Offer Calc's own, Normal
+  // Calculator's own, or both mixed together for a combined read-only look.
+  function getItemsForSource(source){
+    if (source === 'calc') return calcBillItems;
+    if (source === 'mix') return offerBillItems.concat(calcBillItems);
+    return offerBillItems;
+  }
+
+  function computeTotalsForItems(items, includeScrap){
     var totalMrp = 0, totalSaved = 0, grandTotal = 0, activeCount = 0;
-    billItems.forEach(function(item){
+    items.forEach(function(item){
       if (item.active === false) return;
       totalMrp += item.mrp;
       totalSaved += item.saved;
@@ -1724,7 +2015,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       activeCount++;
     });
     var exObj = getCurrentExchangeValuesObj();
-    var totalExchange = (exObj.amount > 0 && savedScrapData.active !== false) ? exObj.amount : 0;
+    var totalExchange = (includeScrap && exObj.amount > 0 && savedScrapData.active !== false) ? exObj.amount : 0;
     grandTotal = round2(Math.max(0, grandTotal - totalExchange));
     return {
       totalMrp: round2(totalMrp),
@@ -1732,18 +2023,19 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       grandTotal: grandTotal,
       exObj: exObj,
       totalExchange: round2(totalExchange),
-      activeCount: activeCount + ((exObj.amount > 0 && savedScrapData.active !== false) ? 1 : 0)
+      activeCount: activeCount + (totalExchange > 0 ? 1 : 0)
     };
   }
 
-  function updateBillSummary(){
-    var t = computeTotals();
-
+  // The Offer Calc summary bar (Items/Saved/Total MRP/Grand Total) always reflects
+  // Offer Calc's own items — it's a fixed part of that screen, not whatever the Bill
+  // modal happens to be showing.
+  function updateOfferSummaryBar(){
+    var t = computeTotalsForItems(offerBillItems, true);
     summaryCount.textContent = t.activeCount;
     summaryTotalMrp.textContent = formatCurrency(t.totalMrp);
     summarySaved.textContent = formatCurrency(t.totalSaved);
     summaryGrandTotal.textContent = formatCurrency(t.grandTotal);
-    modalGrandTotal.textContent = formatCurrency(t.grandTotal);
 
     if (t.exObj.amount > 0){
       summaryScrapChip.classList.add('show');
@@ -1752,23 +2044,40 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     } else {
       summaryScrapChip.classList.remove('show');
     }
-
-    renderBillModalList(t);
   }
 
-  function renderBillModalList(t){
-    t = t || computeTotals();
-    var hasExchange = t.exObj.amount > 0;
+  // Refresh everything that depends on bill data: the Offer Calc summary bar always,
+  // and the Bill modal's own content only while it's actually open.
+  function refreshAll(){
+    updateOfferSummaryBar();
+    if (billModal.classList.contains('show')) renderBillModal();
+  }
 
-    if (billItems.length === 0 && !hasExchange){
-      billItemsList.innerHTML = '<div class="empty-note">No items or scrap exchange added yet.</div>';
+  function renderBillModal(){
+    var items = getItemsForSource(billModalSource);
+    // Scrap exchange is an Offer Calc concept — shown for Offer Calc's own bill and for
+    // the mixed view, but not for Normal Calculator's standalone bill.
+    var includeScrap = billModalSource !== 'calc';
+    var t = computeTotalsForItems(items, includeScrap);
+    modalGrandTotal.textContent = formatCurrency(t.grandTotal);
+    if (billModalTitle){
+      billModalTitle.textContent = billModalSource === 'calc' ? 'Normal Calculator Bill'
+        : billModalSource === 'mix' ? 'Mixed Bill (Offer + Calculator)'
+        : 'Offer Calc Bill';
+    }
+
+    var hasExchange = includeScrap && t.exObj.amount > 0;
+    var showSourceTag = billModalSource === 'mix';
+
+    if (items.length === 0 && !hasExchange){
+      billItemsList.innerHTML = '<div class="empty-note">No items' + (includeScrap ? ' or scrap exchange' : '') + ' added yet.</div>';
       return;
     }
 
     var html = "";
     var displayIndex = 1;
 
-    billItems.forEach(function(item){
+    items.forEach(function(item){
       var isActive = item.active !== false;
       var rowClass = isActive ? '' : 'off';
       var eyeIcon = isActive
@@ -1777,6 +2086,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var badge = item.discountPct > 0
         ? '<span class="item-badge pct">' + item.discountPct + '% OFF</span>'
         : '<span class="item-badge direct">DIRECT</span>';
+      var sourceTag = showSourceTag ? '<span class="item-badge src">' + (item.source === 'calc' ? 'CALC' : 'OFFER') + '</span>' : '';
       var nameLine = item.name ? escapeHtml(item.name) : 'Item';
       var subLine = 'MRP ' + formatCurrency(item.mrp) + (item.saved > 0 ? ' · Save <b>' + formatCurrency(item.saved) + '</b>' : '');
 
@@ -1785,7 +2095,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           '<div class="item-left">' +
             '<div class="item-idx">' + (displayIndex++) + '</div>' +
             '<div class="item-info">' +
-              '<div class="item-name tabular"><span class="item-name-text">' + nameLine + '</span>' + badge + '</div>' +
+              '<div class="item-name tabular"><span class="item-name-text">' + nameLine + '</span>' + sourceTag + badge + '</div>' +
               '<div class="item-sub">' + subLine + '</div>' +
             '</div>' +
           '</div>' +
@@ -1837,9 +2147,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   /* ---------- receipt model + HTML (shared by preview / native print / PDF capture →
      guarantees the three always look identical) ---------- */
   function buildReceiptModel(){
-    var activeItems = billItems.filter(function(i){ return i.active !== false && i.type === 'product'; });
+    // The receipt reflects whichever bill is currently open in the modal (Offer Calc,
+    // Normal Calculator, or the mixed view) so Preview/Print/PDF always match what's on screen.
+    var items0 = getItemsForSource(billModalSource);
+    var includeScrap = billModalSource !== 'calc';
+    var activeItems = items0.filter(function(i){ return i.active !== false && i.type === 'product'; });
     var exObj = getCurrentExchangeValuesObj();
-    var totalExchange = (exObj.amount > 0 && savedScrapData.active !== false) ? exObj.amount : 0;
+    var totalExchange = (includeScrap && exObj.amount > 0 && savedScrapData.active !== false) ? exObj.amount : 0;
 
     var totalMrp = 0, totalSaved = 0, grandTotal = 0;
     activeItems.forEach(function(item){ totalMrp += item.mrp; totalSaved += item.saved; grandTotal += item.final; });
@@ -1860,8 +2174,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       };
     });
 
+    var subtitleTag = billModalSource === 'calc' ? 'Normal Calculator'
+      : billModalSource === 'mix' ? 'Offer + Calculator'
+      : 'Offer Calc';
+
     return {
-      dateStr: dateStr, timeStr: timeStr,
+      dateStr: dateStr, timeStr: timeStr, subtitleTag: subtitleTag,
       items: items,
       scrap: totalExchange > 0 ? { details: exObj.details || 'Weight deduction', amount: totalExchange } : null,
       totalMrp: totalMrp, totalSaved: totalSaved, totalExchange: totalExchange, grandTotal: grandTotal,
@@ -1877,7 +2195,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       '<div><div class="rcpt-title">LALITHA NATURALS</div><div class="rcpt-title2">Billing Receipt</div></div>' +
       '<div class="rcpt-head-right"><div class="rcpt-label">Date</div><div class="rcpt-id">' + m.dateStr + '</div></div>' +
     '</div>';
-    html += '<div class="rcpt-sub">' + m.timeStr + ' &middot; Offer Calc</div>';
+    html += '<div class="rcpt-sub">' + m.timeStr + ' &middot; ' + m.subtitleTag + '</div>';
     html += '<div class="rcpt-dash"></div>';
 
     m.items.forEach(function(item, i){
@@ -2006,7 +2324,20 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function closeConfirmModal(){ confirmModal.classList.remove('show'); }
 
   /* ---------- modal toggles ---------- */
-  function toggleBillModal(){ billModal.classList.toggle('show'); }
+  function openBillModal(source){
+    billModalSource = source;
+    renderBillModal();
+    billModal.classList.add('show');
+  }
+  function closeBillModal(){ billModal.classList.remove('show'); }
+  // Offer Calc's own "View Bill" button — kept as toggleBillModal (its original name) so
+  // nothing else has to change; it always opens/closes Offer Calc's own bill.
+  function toggleBillModal(){
+    if (billModal.classList.contains('show')) closeBillModal();
+    else openBillModal('offer');
+  }
+  function openCalcBill(){ openBillModal('calc'); }
+  function openMixBill(){ openBillModal('mix'); }
   function toggleSettingsModal(){
     settingsModal.classList.toggle('show');
     if (settingsModal.classList.contains('show')) renderScrapRateInputs();
@@ -2058,6 +2389,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   window.appendValue = appendValue;
   window.backspace = backspace;
   window.clearCalculator = clearCalculator;
+  window.pressOperator = pressOperator;
+  window.pressEquals = pressEquals;
+  window.pressPercent = pressPercent;
+  window.toggleAppMode = toggleAppMode;
   window.toggleScrapSection = toggleScrapSection;
   window.calculateExchangeValue = calculateExchangeValue;
   window.confirmClearScrap = confirmClearScrap;
@@ -2079,6 +2414,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   window.downloadPDF = downloadPDF;
   window.closeConfirmModal = closeConfirmModal;
   window.toggleBillModal = toggleBillModal;
+  window.closeBillModal = closeBillModal;
+  window.openCalcBill = openCalcBill;
+  window.openMixBill = openMixBill;
   window.toggleSettingsModal = toggleSettingsModal;
   window.openLogoPreview = openLogoPreview;
   window.closeLogoPreview = closeLogoPreview;
