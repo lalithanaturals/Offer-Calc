@@ -272,23 +272,23 @@
   .keypad{
     flex:0 0 auto;
     display:grid;
-    grid-template-columns:repeat(4,58px);
+    grid-template-columns:repeat(4,74px);
     justify-content:space-between;
     grid-auto-rows:min-content;
-    row-gap:9px;
+    row-gap:14px;
   }
   .key{
-    border:none; color:#fff; font-weight:700; font-size:29px;
+    border:none; color:#fff; font-weight:600; font-size:33px;
     display:flex; align-items:center; justify-content:center; background:var(--panel-2);
-    width:58px; aspect-ratio:1/1; border-radius:50%;
+    width:74px; aspect-ratio:1/1; border-radius:50%;
   }
   .key:active{ filter:brightness(1.35); transform:scale(0.96); }
-  .key.op{ background:var(--card); font-weight:700; font-size:19px; }
-  .key.zero{ grid-column:span 2; width:100%; aspect-ratio:2/1; border-radius:999px; justify-content:flex-start; padding-left:22px; }
+  .key.op{ background:var(--card); font-weight:600; font-size:24px; }
+  .key.zero{ grid-column:span 2; width:100%; aspect-ratio:2/1; border-radius:999px; justify-content:flex-start; padding-left:28px; }
   .key.add{
-    grid-row:span 5; width:58px; aspect-ratio:auto; border-radius:22px;
+    grid-row:span 5; width:74px; aspect-ratio:auto; border-radius:26px;
     background:linear-gradient(160deg,#fb923c,#ea580c);
-    display:flex; flex-direction:column; gap:5px; font-size:12px; font-weight:800; letter-spacing:.04em;
+    display:flex; flex-direction:column; gap:5px; font-size:13px; font-weight:800; letter-spacing:.04em;
     box-shadow:0 6px 18px rgba(234,88,12,0.35);
   }
   .key.add svg{ width:24px; height:24px; }
