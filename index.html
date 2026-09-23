@@ -62,8 +62,12 @@
     --safe-r:env(safe-area-inset-right, 0px);
   }
 
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  button, input, a, .disc-chip, .pct-pill, .brand, .icon-btn{ touch-action:manipulation; }
+  /* touch-action:manipulation on literally everything — not just the buttons we thought of —
+     is what stops some Android browsers from waiting ~300ms after a tap to see if it's
+     actually a double-tap-to-zoom before registering the click. Without it, presses can
+     feel slow/delayed on Android in particular, even though the same code feels instant
+     on iOS Safari (which suppresses that delay differently, via the viewport meta tag). */
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
   html{ height:100%; }
 
   /* Universal "I pressed this" feedback — every button and tappable element in the app
@@ -1555,7 +1559,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var appMode = 'offer';
   var permanentPercentages = lsGet('lalitha_pcts', [25, 40]);
   if (!Array.isArray(permanentPercentages) || permanentPercentages.length === 0) permanentPercentages = [25, 40];
-  var currentDiscountPct = permanentPercentages.includes(25) ? 25 : permanentPercentages[0];
+  // The last-selected discount % is remembered across Reset (which never touches it) and
+  // across reopening the app (persisted), rather than always snapping back to 25%.
+  var savedDiscountPct = lsGet('lalitha_current_pct', null);
+  var currentDiscountPct = (savedDiscountPct !== null && permanentPercentages.includes(savedDiscountPct))
+    ? savedDiscountPct
+    : (permanentPercentages.includes(25) ? 25 : permanentPercentages[0]);
   // Offer Calc and Normal Calculator keep separate bills by default. 'lalitha_bill_items'
   // is the original key (Offer Calc's), kept as-is so nobody's existing data moves.
   var offerBillItems = lsGet('lalitha_bill_items', []);
@@ -1710,6 +1719,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var removed = permanentPercentages.splice(index, 1)[0];
     if (currentDiscountPct === removed){
       currentDiscountPct = permanentPercentages[0] || 0;
+      lsSet('lalitha_current_pct', currentDiscountPct);
     }
     lsSet('lalitha_pcts', permanentPercentages);
     renderDiscountChips();
@@ -1720,6 +1730,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   function setDiscount(pct){
     currentDiscountPct = pct;
+    lsSet('lalitha_current_pct', pct);
     activeDiscBadge.textContent = pct + '% OFF Active';
     renderDiscountChips();
     updateLivePreview();
